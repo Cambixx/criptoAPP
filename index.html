@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MACD Indicator</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>MACD Indicator</h1>
+        <form id="cryptoForm">
+            <label for="pair">Crypto Pair:</label>
+            <input type="text" id="pair" name="pair" value="BTCUSDT" required>
+            <label for="interval">Time Interval:</label>
+            <select id="interval" name="interval">
+                <option value="1d">1 Day</option>
+                <option value="1h">1 Hour</option>
+                <option value="30m">30 Minutes</option>
+                <option value="15m">15 Minutes</option>
+                <option value="5m">5 Minutes</option>
+            </select>
+            <button type="submit">Get Data</button>
+        </form>
+        <canvas id="macdChart"></canvas>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

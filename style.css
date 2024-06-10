@@ -1,0 +1,33 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f4f4f9;
+}
+
+.container {
+    width: 80%;
+    max-width: 1000px;
+}
+
+h1 {
+    text-align: center;
+}
+
+form {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+form label, form input, form select, form button {
+    margin: 0 10px;
+}
+
+canvas {
+    background-color: #fff;
+    border: 1px solid #ddd;
+}
