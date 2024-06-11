@@ -5,6 +5,20 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 document.getElementById('cryptoForm').addEventListener('submit', async function (e) {
     e.preventDefault();
+    startAutoUpdate();
+});
+
+let updateInterval;
+
+function startAutoUpdate() {
+    if (updateInterval) {
+        clearInterval(updateInterval);
+    }
+    updateChartPeriodically();
+    updateInterval = setInterval(updateChartPeriodically, 5000);
+}
+
+async function updateChartPeriodically() {
     const pair = document.getElementById('pair').value;
     const interval = document.getElementById('interval').value;
     
@@ -16,8 +30,10 @@ document.getElementById('cryptoForm').addEventListener('submit', async function 
     }
     
     const macdData = calculateMACD(data);
-    updateChart(macdData);
-});
+    const rsiData = calculateRSI(data);
+
+    updateChart(macdData, rsiData);
+}
 
 async function fetchCryptoPairs() {
     const url = 'https://api.binance.com/api/v3/ticker/24hr';
@@ -97,29 +113,67 @@ function calculateEMA(prices, length) {
     return emaArray;
 }
 
-function detectCrossovers(macdData) {
+function calculateRSI(data, length = 14) {
+    const gains = [];
+    const losses = [];
+
+    for (let i = 1; i < data.length; i++) {
+        const difference = data[i].close - data[i - 1].close;
+        if (difference >= 0) {
+            gains.push(difference);
+            losses.push(0);
+        } else {
+            gains.push(0);
+            losses.push(Math.abs(difference));
+        }
+    }
+
+    const averageGain = gains.slice(0, length).reduce((a, b) => a + b, 0) / length;
+    const averageLoss = losses.slice(0, length).reduce((a, b) => a + b, 0) / length;
+
+    const rsi = [];
+    for (let i = length; i < data.length; i++) {
+        const currentGain = gains[i];
+        const currentLoss = losses[i];
+
+        const newAverageGain = ((averageGain * (length - 1)) + currentGain) / length;
+        const newAverageLoss = ((averageLoss * (length - 1)) + currentLoss) / length;
+
+        const rs = newAverageGain / newAverageLoss;
+        rsi.push(100 - (100 / (1 + rs)));
+    }
+
+    // Fill initial RSI values with null to match the length of input data
+    while (rsi.length < data.length) {
+        rsi.unshift(null);
+    }
+
+    return rsi;
+}
+
+function detectCrossoversWithRSI(macdData, rsiData, rsiThreshold = 50) {
     const buySignals = [];
     const sellSignals = [];
-    
+
     for (let i = 1; i < macdData.macd.length; i++) {
-        if (macdData.macd[i] > macdData.signal[i] && macdData.macd[i - 1] <= macdData.signal[i - 1]) {
+        if (macdData.macd[i] > macdData.signal[i] && macdData.macd[i - 1] <= macdData.signal[i - 1] && rsiData[i] < rsiThreshold) {
             buySignals.push({ time: macdData.time[i], value: macdData.macd[i] });
-        } else if (macdData.macd[i] < macdData.signal[i] && macdData.macd[i - 1] >= macdData.signal[i - 1]) {
+        } else if (macdData.macd[i] < macdData.signal[i] && macdData.macd[i - 1] >= macdData.signal[i - 1] && rsiData[i] > rsiThreshold) {
             sellSignals.push({ time: macdData.time[i], value: macdData.macd[i] });
         }
     }
-    
+
     return { buySignals, sellSignals };
 }
 
-function updateChart(macdData) {
+function updateChart(macdData, rsiData) {
     const ctx = document.getElementById('macdChart').getContext('2d');
     
     if (window.myChart) {
         window.myChart.destroy();
     }
 
-    const crossovers = detectCrossovers(macdData);
+    const crossovers = detectCrossoversWithRSI(macdData, rsiData);
     
     window.myChart = new Chart(ctx, {
         type: 'bar',
@@ -132,7 +186,8 @@ function updateChart(macdData) {
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 2,
                     fill: false,
-                    type: 'line'
+                    type: 'line',
+                    pointRadius: 0 // Hide points on MACD line
                 },
                 {
                     label: 'Signal Line',
@@ -140,7 +195,8 @@ function updateChart(macdData) {
                     borderColor: 'rgba(153, 102, 255, 1)',
                     borderWidth: 2,
                     fill: false,
-                    type: 'line'
+                    type: 'line',
+                    pointRadius: 0 // Hide points on Signal line
                 },
                 {
                     label: 'Histogram',
@@ -154,7 +210,7 @@ function updateChart(macdData) {
                     data: crossovers.buySignals.map(signal => ({ x: signal.time, y: signal.value })),
                     backgroundColor: 'green',
                     borderColor: 'green',
-                    pointRadius: 5,
+                    pointRadius: 7, // Increase the size of buy signal points
                     pointStyle: 'triangle',
                     showLine: false,
                     type: 'scatter'
@@ -164,7 +220,7 @@ function updateChart(macdData) {
                     data: crossovers.sellSignals.map(signal => ({ x: signal.time, y: signal.value })),
                     backgroundColor: 'red',
                     borderColor: 'red',
-                    pointRadius: 5,
+                    pointRadius: 7, // Increase the size of sell signal points
                     pointStyle: 'triangle',
                     showLine: false,
                     type: 'scatter'
@@ -177,6 +233,22 @@ function updateChart(macdData) {
                     type: 'time',
                     time: {
                         unit: 'day'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                            }
+                            return label;
+                        }
                     }
                 }
             }
