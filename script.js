@@ -7,18 +7,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 document.getElementById('cryptoForm').addEventListener('submit', async function (e) {
     e.preventDefault();
-    startAutoUpdate();
-});
-
-let updateInterval;
-
-function startAutoUpdate() {
-    if (updateInterval) {
-        clearInterval(updateInterval);
-    }
     updateChartPeriodically();
-    updateInterval = setInterval(updateChartPeriodically, 5000);
-}
+});
 
 async function updateChartPeriodically() {
     const pair = document.getElementById('pair').value;
@@ -35,8 +25,8 @@ async function updateChartPeriodically() {
     const rsiData = calculateRSI(data);
     const adxData = calculateADX(data);
 
-    const crossovers = detectCrossoversWithRSI(macdData, rsiData, adxData);
-    updateChart(macdData, rsiData, crossovers);
+    const crossovers = detectCrossovers(macdData, rsiData, adxData);
+    updateChart(macdData, crossovers);
     notifySignals(crossovers);
 }
 
@@ -148,7 +138,6 @@ function calculateRSI(data, length = 14) {
         rsi.push(100 - (100 / (1 + rs)));
     }
 
-    // Fill initial RSI values with null to match the length of input data
     while (rsi.length < data.length) {
         rsi.unshift(null);
     }
@@ -157,22 +146,22 @@ function calculateRSI(data, length = 14) {
 }
 
 function calculateADX(data, length = 14) {
+    // For simplicity, assuming only close price is used, modify accordingly if high and low are available
     const plusDMs = [];
     const minusDMs = [];
     const trueRanges = [];
 
     for (let i = 1; i < data.length; i++) {
-        const currentHigh = data[i].high;
-        const currentLow = data[i].low;
+        const currentClose = data[i].close;
         const previousClose = data[i - 1].close;
 
-        const plusDM = currentHigh - data[i - 1].high;
-        const minusDM = data[i - 1].low - currentLow;
+        const plusDM = currentClose - previousClose;
+        const minusDM = previousClose - currentClose;
 
-        plusDMs.push(plusDM > minusDM && plusDM > 0 ? plusDM : 0);
-        minusDMs.push(minusDM > plusDM && minusDM > 0 ? minusDM : 0);
+        plusDMs.push(plusDM > 0 ? plusDM : 0);
+        minusDMs.push(minusDM > 0 ? minusDM : 0);
 
-        trueRanges.push(Math.max(currentHigh - currentLow, Math.abs(currentHigh - previousClose), Math.abs(currentLow - previousClose)));
+        trueRanges.push(Math.abs(currentClose - previousClose));
     }
 
     const smoothedPlusDMs = calculateEMA(plusDMs, length);
@@ -186,7 +175,6 @@ function calculateADX(data, length = 14) {
 
     const adx = calculateEMA(dxs, length);
 
-    // Fill initial ADX values with null to match the length of input data
     while (adx.length < data.length) {
         adx.unshift(null);
     }
@@ -194,15 +182,15 @@ function calculateADX(data, length = 14) {
     return adx;
 }
 
-function detectCrossoversWithRSI(macdData, rsiData, adxData) {
+function detectCrossovers(macdData, rsiData, adxData) {
     const buySignals = [];
     const sellSignals = [];
 
     for (let i = 1; i < macdData.time.length; i++) {
-        if (macdData.macd[i - 1] <= macdData.signal[i - 1] && macdData.macd[i] > macdData.signal[i] && rsiData[i] < 30 && adxData[i] > 20) {
+        if (macdData.macd[i - 1] <= macdData.signal[i - 1] && macdData.macd[i] > macdData.signal[i]) {
             buySignals.push({ time: macdData.time[i], value: macdData.macd[i] });
         }
-        if (macdData.macd[i - 1] >= macdData.signal[i - 1] && macdData.macd[i] < macdData.signal[i] && rsiData[i] > 70 && adxData[i] > 20) {
+        if (macdData.macd[i - 1] >= macdData.signal[i - 1] && macdData.macd[i] < macdData.signal[i]) {
             sellSignals.push({ time: macdData.time[i], value: macdData.macd[i] });
         }
     }
@@ -210,7 +198,7 @@ function detectCrossoversWithRSI(macdData, rsiData, adxData) {
     return { buySignals, sellSignals };
 }
 
-function updateChart(macdData, rsiData, crossovers) {
+function updateChart(macdData, crossovers) {
     const ctx = document.getElementById('signalsChart').getContext('2d');
 
     if (window.myChart) {
