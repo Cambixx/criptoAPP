@@ -1,3 +1,5 @@
+/* style.css */
+
 body {
     font-family: Arial, sans-serif;
     display: flex;
@@ -28,6 +30,8 @@ form label, form input, form select, form button {
 }
 
 canvas {
-    background-color: #fff;
-    border: 1px solid #ddd;
+    background-color: #fff; /* Fondo blanco para el canvas */
+    border: 1px solid #ddd; /* Borde del canvas */
+    width: 100%; /* Asegura que el canvas ocupe todo el ancho disponible */
+    height: 400px; /* Altura fija del canvas, ajusta según sea necesario */
 }

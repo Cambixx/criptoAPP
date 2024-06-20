@@ -1,3 +1,5 @@
+// script.js
+
 document.addEventListener('DOMContentLoaded', async function () {
     const pairs = await fetchCryptoPairs();
     populateCryptoPairs(pairs);
@@ -177,22 +179,30 @@ function calculateADX(data, length = 14) {
     const smoothedMinusDMs = calculateEMA(minusDMs, length);
     const smoothedTrueRanges = calculateEMA(trueRanges, length);
 
-    const plusDis = smoothedPlusDMs.map((dm, i) => (dm / smoothedTrueRanges[i]) * 100);
-    const minusDis = smoothedMinusDMs.map((dm, i) => (dm / smoothedTrueRanges[i]) * 100);
+    const plusDis = smoothedPlusDMs.map((dm, index) => 100 * (dm / smoothedTrueRanges[index]));
+    const minusDis = smoothedMinusDMs.map((dm, index) => 100 * (dm / smoothedTrueRanges[index]));
 
-    const dxs = plusDis.map((plusDi, i) => Math.abs(plusDi - minusDis[i]) / (plusDi + minusDis[i]) * 100);
+    const dxs = plusDis.map((pdi, index) => 100 * (Math.abs(pdi - minusDis[index]) / (pdi + minusDis[index])));
 
-    return calculateEMA(dxs, length);
+    const adx = calculateEMA(dxs, length);
+
+    // Fill initial ADX values with null to match the length of input data
+    while (adx.length < data.length) {
+        adx.unshift(null);
+    }
+
+    return adx;
 }
 
-function detectCrossoversWithRSI(macdData, rsiData, adxData, rsiThreshold = 50, adxThreshold = 20) {
+function detectCrossoversWithRSI(macdData, rsiData, adxData) {
     const buySignals = [];
     const sellSignals = [];
 
-    for (let i = 1; i < macdData.macd.length; i++) {
-        if (macdData.macd[i] > macdData.signal[i] && macdData.macd[i - 1] <= macdData.signal[i - 1] && rsiData[i] < rsiThreshold && adxData[i] > adxThreshold) {
+    for (let i = 1; i < macdData.time.length; i++) {
+        if (macdData.macd[i - 1] <= macdData.signal[i - 1] && macdData.macd[i] > macdData.signal[i] && rsiData[i] < 30 && adxData[i] > 20) {
             buySignals.push({ time: macdData.time[i], value: macdData.macd[i] });
-        } else if (macdData.macd[i] < macdData.signal[i] && macdData.macd[i - 1] >= macdData.signal[i - 1] && rsiData[i] > rsiThreshold && adxData[i] > adxThreshold) {
+        }
+        if (macdData.macd[i - 1] >= macdData.signal[i - 1] && macdData.macd[i] < macdData.signal[i] && rsiData[i] > 70 && adxData[i] > 20) {
             sellSignals.push({ time: macdData.time[i], value: macdData.macd[i] });
         }
     }
@@ -201,7 +211,7 @@ function detectCrossoversWithRSI(macdData, rsiData, adxData, rsiThreshold = 50, 
 }
 
 function updateChart(macdData, rsiData, crossovers) {
-    const ctx = document.getElementById('macdChart').getContext('2d');
+    const ctx = document.getElementById('signalsChart').getContext('2d');
 
     if (window.myChart) {
         window.myChart.destroy();
@@ -213,15 +223,15 @@ function updateChart(macdData, rsiData, crossovers) {
         yValue: signal.value,
         backgroundColor: 'green',
         borderColor: 'green',
-        borderWidth: 2,
+        radius: 5,
         pointStyle: 'triangle',
-        rotation: 180, // Arrow pointing up
+        rotation: 180,
         label: {
             content: 'BUY',
             enabled: true,
-            position: 'start',
+            position: 'top',
             backgroundColor: 'green',
-            color: 'white',
+            font: { style: 'bold', size: 12 },
             yAdjust: -10
         }
     }));
@@ -232,15 +242,15 @@ function updateChart(macdData, rsiData, crossovers) {
         yValue: signal.value,
         backgroundColor: 'red',
         borderColor: 'red',
-        borderWidth: 2,
+        radius: 5,
         pointStyle: 'triangle',
-        rotation: 0, // Arrow pointing down
+        rotation: 0,
         label: {
             content: 'SELL',
             enabled: true,
-            position: 'start',
+            position: 'bottom',
             backgroundColor: 'red',
-            color: 'white',
+            font: { style: 'bold', size: 12 },
             yAdjust: 10
         }
     }));
@@ -257,7 +267,7 @@ function updateChart(macdData, rsiData, crossovers) {
                     borderWidth: 2,
                     fill: false,
                     type: 'line',
-                    pointRadius: 0 // Hide points on MACD line
+                    pointRadius: 0
                 },
                 {
                     label: 'Signal Line',
@@ -266,7 +276,7 @@ function updateChart(macdData, rsiData, crossovers) {
                     borderWidth: 2,
                     fill: false,
                     type: 'line',
-                    pointRadius: 0 // Hide points on Signal line
+                    pointRadius: 0
                 },
                 {
                     label: 'Histogram',
@@ -287,9 +297,12 @@ function updateChart(macdData, rsiData, crossovers) {
                 }
             },
             plugins: {
+                annotation: {
+                    annotations: [...buyAnnotations, ...sellAnnotations]
+                },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             let label = context.dataset.label || '';
                             if (label) {
                                 label += ': ';
@@ -300,9 +313,6 @@ function updateChart(macdData, rsiData, crossovers) {
                             return label;
                         }
                     }
-                },
-                annotation: {
-                    annotations: [...buyAnnotations, ...sellAnnotations]
                 }
             }
         }
@@ -314,10 +324,12 @@ function notifySignals(crossovers) {
     const sellSignals = crossovers.sellSignals;
 
     if (buySignals.length > 0) {
-        alert('Buy Signal Detected');
+        const buySignal = buySignals[buySignals.length - 1];
+        alert(`BUY Signal detected at ${buySignal.time} with value ${buySignal.value}`);
     }
 
     if (sellSignals.length > 0) {
-        alert('Sell Signal Detected');
+        const sellSignal = sellSignals[sellSignals.length - 1];
+        alert(`SELL Signal detected at ${sellSignal.time} with value ${sellSignal.value}`);
     }
 }
