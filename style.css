@@ -8,25 +8,32 @@ body {
     height: 100vh;
     margin: 0;
     background-color: #f4f4f9;
+    padding: 20px; /* Añadir padding para que respire mejor en pantallas pequeñas */
 }
 
 .container {
-    width: 80%;
-    max-width: 1000px;
+    width: 100%;
+    max-width: 1200px; /* Aumentar el máximo ancho para pantallas grandes */
+    margin: 0 auto; /* Centrar el contenedor */
 }
 
 h1 {
     text-align: center;
+    font-size: 1.5rem; /* Ajustar el tamaño de la fuente */
+    margin-bottom: 20px; /* Añadir un margen inferior */
 }
 
 form {
     display: flex;
-    justify-content: center;
+    flex-direction: column; /* Cambiar a columna para pantallas pequeñas */
+    align-items: center;
     margin-bottom: 20px;
 }
 
 form label, form input, form select, form button {
-    margin: 0 10px;
+    margin: 5px 0; /* Añadir un margen más pequeño */
+    width: 90%; /* Asegurar que los elementos ocupen todo el ancho */
+    max-width: 300px; /* Limitar el ancho máximo */
 }
 
 canvas {
@@ -34,4 +41,27 @@ canvas {
     border: 1px solid #ddd; /* Borde del canvas */
     width: 100%; /* Asegura que el canvas ocupe todo el ancho disponible */
     height: 400px; /* Altura fija del canvas, ajusta según sea necesario */
+    margin: 20px 0; /* Añadir un margen vertical */
+}
+
+@media (min-width: 600px) {
+    form {
+        flex-direction: row; /* Cambiar a fila para pantallas medianas y grandes */
+        justify-content: center; /* Centrar los elementos */
+    }
+
+    form label, form input, form select, form button {
+        margin: 0 10px; /* Restaurar el margen horizontal */
+        width: auto; /* Permitir que los elementos se ajusten automáticamente */
+    }
+}
+
+@media (min-width: 1024px) {
+    h1 {
+        font-size: 2rem; /* Aumentar el tamaño de la fuente para pantallas grandes */
+    }
+
+    canvas {
+        height: 600px; /* Aumentar la altura del canvas */
+    }
 }
