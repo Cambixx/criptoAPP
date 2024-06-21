@@ -1,67 +1,98 @@
 /* style.css */
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Roboto', sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
     background-color: #f4f4f9;
-    padding: 20px; /* Añadir padding para que respire mejor en pantallas pequeñas */
+    padding: 20px;
+    color: #333;
 }
 
 .container {
     width: 100%;
-    max-width: 1200px; /* Aumentar el máximo ancho para pantallas grandes */
-    margin: 0 auto; /* Centrar el contenedor */
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
 }
 
 h1 {
     text-align: center;
-    font-size: 1.5rem; /* Ajustar el tamaño de la fuente */
-    margin-bottom: 20px; /* Añadir un margen inferior */
+    font-size: 2rem;
+    color: #0056b3;
+    margin-bottom: 20px;
 }
 
 form {
     display: flex;
-    flex-direction: column; /* Cambiar a columna para pantallas pequeñas */
+    flex-direction: column;
     align-items: center;
     margin-bottom: 20px;
 }
 
-form label, form input, form select, form button {
-    margin: 5px 0; /* Añadir un margen más pequeño */
-    width: 90%; /* Asegurar que los elementos ocupen todo el ancho */
-    max-width: 300px; /* Limitar el ancho máximo */
+form label {
+    margin: 5px 0;
+    width: 90%;
+    max-width: 300px;
+    text-align: left;
+    font-weight: bold;
+    color: #0056b3;
+}
+
+form select, form button {
+    margin: 10px 0;
+    width: 90%;
+    max-width: 300px;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+}
+
+form button {
+    background-color: #0056b3;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+form button:hover {
+    background-color: #004494;
 }
 
 canvas {
-    background-color: #fff; /* Fondo blanco para el canvas */
-    border: 1px solid #ddd; /* Borde del canvas */
-    width: 100%; /* Asegura que el canvas ocupe todo el ancho disponible */
-    height: 400px; /* Altura fija del canvas, ajusta según sea necesario */
-    margin: 20px 0; /* Añadir un margen vertical */
+    background-color: #fff;
+    border: 1px solid #ddd;
+    width: 100%;
+    height: 400px;
+    margin: 20px 0;
+    border-radius: 8px;
 }
 
 @media (min-width: 600px) {
     form {
-        flex-direction: row; /* Cambiar a fila para pantallas medianas y grandes */
-        justify-content: center; /* Centrar los elementos */
+        flex-direction: row;
+        justify-content: center;
     }
 
-    form label, form input, form select, form button {
-        margin: 0 10px; /* Restaurar el margen horizontal */
-        width: auto; /* Permitir que los elementos se ajusten automáticamente */
+    form label, form select, form button {
+        margin: 0 10px;
+        width: auto;
     }
 }
 
 @media (min-width: 1024px) {
     h1 {
-        font-size: 2rem; /* Aumentar el tamaño de la fuente para pantallas grandes */
+        font-size: 2.5rem;
     }
 
     canvas {
-        height: 600px; /* Aumentar la altura del canvas */
+        height: 600px;
     }
 }

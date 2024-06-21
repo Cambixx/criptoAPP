@@ -307,17 +307,36 @@ function updateChart(macdData, crossovers) {
     });
 }
 
+if (Notification.permission !== 'granted') {
+    Notification.requestPermission();
+}
+
 function notifySignals(crossovers) {
     const buySignals = crossovers.buySignals;
     const sellSignals = crossovers.sellSignals;
 
+    const buySound = document.getElementById('buy-sound');
+    const sellSound = document.getElementById('sell-sound');
+
     if (buySignals.length > 0) {
         const buySignal = buySignals[buySignals.length - 1];
-        alert(`BUY Signal detected at ${buySignal.time} with value ${buySignal.value}`);
+        buySound.play();
+        if (Notification.permission === 'granted') {
+            new Notification(`BUY Signal detected at ${buySignal.time}`, {
+                body: `Value: ${buySignal.value}`,
+                icon: './buy.png' // Opcional: ruta a un icono
+            });
+        }
     }
 
     if (sellSignals.length > 0) {
         const sellSignal = sellSignals[sellSignals.length - 1];
-        alert(`SELL Signal detected at ${sellSignal.time} with value ${sellSignal.value}`);
+        sellSound.play();
+        if (Notification.permission === 'granted') {
+            new Notification(`SELL Signal detected at ${sellSignal.time}`, {
+                body: `Value: ${sellSignal.value}`,
+                icon: './sell.png' // Opcional: ruta a un icono
+            });
+        }
     }
 }
