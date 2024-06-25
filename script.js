@@ -13,39 +13,32 @@ document.getElementById('cryptoForm').addEventListener('submit', async function 
 async function updateChartPeriodically() {
     const pair = document.getElementById('pair').value;
     const interval = document.getElementById('interval').value;
-
     const data = await fetchCryptoData(pair, interval);
-
     if (data.length === 0) {
         alert('No data returned. Please check your API key and parameters.');
         return;
     }
-
     const macdData = calculateMACD(data);
     const rsiData = calculateRSI(data);
     const adxData = calculateADX(data);
-
     const crossovers = detectCrossovers(macdData, rsiData, adxData);
     updateChart(macdData, crossovers);
     notifySignals(crossovers);
 }
-
+// Llama a updateChartPeriodically cada cierto tiempo (por ejemplo, cada minuto)
+setInterval(updateChartPeriodically, 6000); 
 async function fetchCryptoPairs() {
     const url = 'https://api.binance.com/api/v3/ticker/24hr';
     const response = await fetch(url);
-
     if (!response.ok) {
         alert('Error fetching crypto pairs. Please check your network connection.');
         return [];
     }
-
     const data = await response.json();
-
     // Filter and sort pairs with respect to USDT by volume in descending order
     const usdtPairs = data
         .filter(ticker => ticker.symbol.endsWith('USDT'))
         .sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume));
-
     return usdtPairs;
 }
 
@@ -198,6 +191,8 @@ function detectCrossovers(macdData, rsiData, adxData) {
     return { buySignals, sellSignals };
 }
 
+let previousSignals = [];
+
 function updateChart(macdData, crossovers) {
     const ctx = document.getElementById('signalsChart').getContext('2d');
 
@@ -305,6 +300,8 @@ function updateChart(macdData, crossovers) {
             }
         }
     });
+
+    previousSignals = [...crossovers.buySignals, ...crossovers.sellSignals].map(signal => signal.time); 
 }
 
 if (Notification.permission !== 'granted') {
@@ -314,29 +311,28 @@ if (Notification.permission !== 'granted') {
 function notifySignals(crossovers) {
     const buySignals = crossovers.buySignals;
     const sellSignals = crossovers.sellSignals;
-
     const buySound = document.getElementById('buy-sound');
     const sellSound = document.getElementById('sell-sound');
-
-    if (buySignals.length > 0) {
-        const buySignal = buySignals[buySignals.length - 1];
+    // Filtrar señales nuevas
+    const newBuySignals = buySignals.filter(signal => !previousSignals.includes(signal.time));
+    const newSellSignals = sellSignals.filter(signal => !previousSignals.includes(signal.time));
+    // Reproducir sonidos para señales nuevas
+    newBuySignals.forEach(signal => {
         buySound.play();
         if (Notification.permission === 'granted') {
-            new Notification(`BUY Signal detected at ${buySignal.time}`, {
-                body: `Value: ${buySignal.value}`,
-                icon: './buy.png' // Opcional: ruta a un icono
+            new Notification(`BUY Signal detected at ${signal.time}`, {
+                body: `Value: ${signal.value}`,
+                icon: './buy.png' 
             });
         }
-    }
-
-    if (sellSignals.length > 0) {
-        const sellSignal = sellSignals[sellSignals.length - 1];
+    });
+    newSellSignals.forEach(signal => {
         sellSound.play();
         if (Notification.permission === 'granted') {
-            new Notification(`SELL Signal detected at ${sellSignal.time}`, {
-                body: `Value: ${sellSignal.value}`,
-                icon: './sell.png' // Opcional: ruta a un icono
+            new Notification(`SELL Signal detected at ${signal.time}`, {
+                body: `Value: ${signal.value}`,
+                icon: './sell.png' 
             });
         }
-    }
+    });
 }
